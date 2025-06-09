@@ -1,0 +1,1354 @@
+Ecosort/
+│── client/ 
+│   ├── node_modules
+│   ├── public/
+│   │   ├── images/
+│   │   │   ├── logo.png
+│   │   ├── index.html
+│   │   ├── styles.css
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Login.js
+│   │   │   ├── Register.js
+│   │   │   ├── Navbar.js
+│   │   │   ├── Modal.js
+│   │   │   ├── Map.js
+│   │   │   ├── Map.module.css
+│   │   │   ├── Navbar.module.css
+│   │   ├── pages
+│   │   │   ├── Dashboard.js
+│   │   │   ├── Home.module.css
+│   │   │   ├── Dashboard.module.css
+│   │   │   ├── Home.js
+│   │   │   ├── not-found.css
+│   │   │   ├── NotFound.js
+│   │   ├── App.js
+│   │   ├── index.css
+│   │   ├── index.js
+│   ├── .babelrc
+│   ├── package-lock.json
+│   ├── package.json
+│── server/ 
+│   ├── node_modules
+│   ├── src/
+│   │   ├── middleware/
+│   │   │   ├── authenticateToken.js
+│   │   ├── models/
+│   │   │   ├── Container.js
+│   │   │   ├── User.js  
+│   │   ├── routes/
+│   │   │   ├── containers.js
+│   │   │   ├── users.js
+│   │   │   ├── authRoutes.js  
+│   │   ├── utils/
+│   │   │   ├── errorHandler.js
+│   │   ├── index.js
+│   ├── .env
+│   ├── package-lock.json
+│   ├── package.json
+├── README.md
+
+Ecosort/
+client/ 
+
+public/
+index.html
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Установка viewport для адаптивного дизайна -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Подключение глобальных стилей -->
+    <link rel="stylesheet" href="%PUBLIC_URL%/styles.css" />
+    <title>Ecosort</title>
+  </head>
+  <body>
+    <!-- Контейнер для рендера React-приложения -->
+    <div id="root"></div>
+  </body>
+</html>
+
+styles.css
+
+/* Глобальные стили для body */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* Стили для формы (login / register) */
+.container {
+  width: 300px;
+  margin: 50px auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Стили для input и button */
+input, button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #218838;
+}
+
+src/
+components/
+Login.js
+
+import React, { useState } from 'react';
+
+export default function Login({ closeModal }) {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Login failed');
+
+      // Сохранение данных пользователя
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      closeModal();
+      
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="auth-form">
+      <h2>Login</h2>
+      {error && <div className="error">{error}</div>}
+      
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          required
+        />
+        
+        <input
+          type="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={(e) => setFormData({...formData, password: e.target.value})}
+          required
+        />
+        
+        <button type="submit">Log In</button>
+      </form>
+    </div>
+  );
+}
+
+Register.js
+
+import React, { useState } from 'react';
+
+export default function Register({ closeModal }) {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Registration failed');
+
+      // Сохранение данных пользователя
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      closeModal();
+      
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="auth-form">
+      <h2>Registration</h2>
+      {error && <div className="error">{error}</div>}
+      
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="First Name"
+          value={formData.firstName}
+          onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+          required
+        />
+        
+        <input
+          type="text"
+          placeholder="Last Name"
+          value={formData.lastName}
+          onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+          required
+        />
+        
+        <input
+          type="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={(e) => setFormData({...formData, email: e.target.value})}
+          required
+        />
+        
+        <input
+          type="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={(e) => setFormData({...formData, password: e.target.value})}
+          required
+          minLength="6"
+        />
+        
+        <button type="submit">Register</button>
+      </form>
+    </div>
+  );
+}
+
+Navbar.js
+
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import Login from './Login';
+import Register from './Register';
+import Modal from './Modal';
+import styles from './Navbar.module.css';
+
+export default function Navbar() {
+  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  const toggleModal = () => setShowModal(!showModal);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
+  return (
+    <>
+      <header className={styles.header}>
+        <div className={styles.logoContainer}>
+          <img src="/images/logo.png" alt="Logo" className={styles.logo} />
+          <h1 className={styles.title}>Ecosort</h1>
+        </div>
+        <nav className={styles.nav}>
+          <Link to="/" className={styles.buttonLink}>Home</Link>
+          {user ? (
+            <>
+              <Link to="/dashboard" className={styles.buttonLink}>Dashboard</Link>
+              <Link to="/map" className={styles.buttonLink}>Map</Link>
+              <button onClick={handleLogout} className={styles.navButton}>Logout</button>
+            </>
+          ) : (
+            <button onClick={toggleModal} className={styles.navButton}>Login</button>
+          )}
+        </nav>
+      </header>
+
+      {showModal && (
+        <Modal closeModal={toggleModal}>
+          <div className={styles.tabContainer}>
+            <button
+              onClick={() => setIsLogin(true)}
+              className={`${styles.tabButton} ${isLogin ? styles.activeTab : ''}`}
+            >
+              Login
+            </button>
+            <button
+              onClick={() => setIsLogin(false)}
+              className={`${styles.tabButton} ${!isLogin ? styles.activeTab : ''}`}
+            >
+              Register
+            </button>
+          </div>
+          {isLogin ? <Login closeModal={toggleModal} /> : <Register closeModal={toggleModal} />}
+        </Modal>
+      )}
+    </>
+  );
+}
+
+Modal.js
+
+import React from "react";
+
+// Компонент модального окна
+export default function Modal({ children, closeModal }) {
+  return (
+    <div style={styles.modalOverlay}>
+      <div style={styles.modalContent}>
+        <button onClick={closeModal} style={styles.closeButton}>
+          X
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  // Оверлей модального окна
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  // Контейнер модального окна
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: "20px",
+    borderRadius: "8px",
+    width: "350px",
+    position: "relative",
+  },
+  // Кнопка закрытия модального окна
+  closeButton: {
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    background: "transparent",
+    border: "none",
+    fontSize: "16px",
+    cursor: "pointer",
+  },
+};
+
+
+Map.js
+
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import axios from 'axios';
+import styles from './Map.module.css';
+
+// Фикс для иконок
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png'
+});
+
+const Map = () => {
+  const [containers, setContainers] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    const fetchContainers = async () => {
+      try {
+        const response = await axios.get('/api/containers');
+        setContainers(response.data);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    fetchContainers();
+  }, []);
+
+  const handleLocateMe = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        error => console.error('Geolocation error:', error)
+      );
+    }
+  };
+
+  return (
+    <div className={styles.mapContainer}>
+      <button onClick={handleLocateMe} className={styles.locateButton}>
+        Locate Me
+      </button>
+      
+      <MapContainer 
+        center={[43.238949, 76.889709]} 
+        zoom={13} 
+        className={styles.leafletContainer}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; OpenStreetMap contributors'
+        />
+
+        {userLocation && (
+          <Marker position={[userLocation.lat, userLocation.lng]}>
+            <Popup>Your Location</Popup>
+          </Marker>
+        )}
+
+        {containers.map(container => (
+          <Marker
+            key={container._id}
+            position={[container.latitude, container.longitude]}
+          >
+            <Popup>
+              <h3>{container.name}</h3>
+              <p>Status: {container.status}</p>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  );
+};
+
+export default Map;
+
+Map.module.css
+
+.mapContainer {
+    position: relative;
+    height: calc(100vh - 80px);
+    padding: 20px;
+  }
+  
+  .locateButton {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 10px 15px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .leafletContainer {
+    height: 100%;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+Navbar.module.css
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+  }
+  
+  .logoContainer {
+    display: flex;
+    align-items: center;
+  }
+  
+  .logo {
+    height: 40px;
+    margin-right: 10px;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+    color: #333;
+  }
+  
+  .nav {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .buttonLink {
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    transition: background 0.3s;
+  }
+  
+  .buttonLink:hover {
+    background: #218838;
+  }
+  
+  .navButton {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background: #28a745;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .tabContainer {
+    display: flex;
+    margin-bottom: 15px;
+  }
+  
+  .tabButton {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    background: #f0f0f0;
+  }
+  
+  .activeTab {
+    background: #28a745;
+    color: white;
+  }
+
+pages/
+Dashboard.js
+
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+export default function Dashboard() {
+  const [userData, setUserData] = useState(null);
+  const userId = localStorage.getItem('userId');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`/api/users/stats/${userId}`);
+        setUserData(response.data);
+      } catch (err) {
+        console.error('Ошибка загрузки данных:', err);
+      }
+    };
+    fetchData();
+  }, [userId]);
+
+  if (!userData) return <div>Загрузка...</div>;
+
+  return (
+    <div className="dashboard">
+      <h1>Добро пожаловать, {userData.firstName} {userData.lastName}!</h1>
+      
+      <div className="stats">
+        <div className="stat-item">
+          <h3>Рейтинг</h3>
+          <p>★ {userData.rating}</p>
+        </div>
+        
+        <div className="stat-item">
+          <h3>Бонусы</h3>
+          <p>{userData.bonuses}</p>
+        </div>
+        
+        <div className="stat-item">
+          <h3>Найдено контейнеров</h3>
+          <p>{userData.containersFound}</p>
+        </div>
+        
+        <div className="stat-item">
+          <h3>Статус</h3>
+          <p>{userData.status}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Home.module.css
+
+.container {
+  padding: 50px;
+  text-align: center;
+  background-color: #f9fdf9;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.title {
+  font-size: 3rem;
+  color: #28a745;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.content {
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.textSection {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.imageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.imageGrid img {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.bottomText {
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: #2e2e2e;
+  margin-top: 20px;
+  text-align: center;
+}
+.chartContainer {
+  margin-top: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.impactSection {
+  margin-top: 60px;
+  padding: 20px;
+  background-color: #f3f7f5;
+  border-radius: 16px;
+  text-align: center;
+}
+
+Dashboard.module.css
+
+.dashboard {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.stat-item {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-item h3 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.stat-item p {
+  font-size: 1.5rem;
+  color: #28a745;
+  font-weight: bold;
+}
+
+Home.js
+
+import React from 'react';
+import styles from './Home.module.css';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+
+const wasteData = [
+  { name: 'Organic', value: 45 },
+  { name: 'Plastic', value: 25 },
+  { name: 'Paper', value: 15 },
+  { name: 'Metal', value: 10 },
+  { name: 'Glass', value: 5 }
+];
+
+const COLORS = ['#4CAF50', '#FF9800', '#2196F3', '#9C27B0', '#00BCD4'];
+
+const Home = () => {
+  return (
+    <div className={styles.container}>
+      <h1 className={styles.title}>Welcome to Ecosort</h1>
+      <p className={styles.subtitle}>Smart Recycling Solutions</p>
+
+      <div className={styles.content}>
+        <div className={styles.textSection}>
+          <p>
+            In Kazakhstan, rapid urbanization and industrial development have led to increased waste production and environmental concerns. Ecosort is an innovative project aimed at transforming waste management by promoting recycling and sustainability through modern technology and public education.
+          </p>
+          <p>
+            Ecosort empowers communities by teaching people how to sort waste efficiently, reduce landfill use, and turn waste into valuable raw materials. Our mission is to create a cleaner, greener, and smarter Kazakhstan where every citizen plays a role in protecting the environment.
+          </p>
+          <p>
+            Through smart containers, real-time tracking, and a user rewards system, Ecosort makes recycling easier and more rewarding. Whether you're at home, school, or work — Ecosort ensures you always have the tools and motivation to make a difference.
+          </p>
+        </div>
+
+        <div className={styles.imageGrid}>
+          <img src="https://plus.unsplash.com/premium_photo-1683063005230-ec93739b6dd8?w=900&auto=format&fit=crop&q=60" alt="Recycling in Action" />
+          <img src="https://plus.unsplash.com/premium_photo-1663089270259-5e23b75bfb99?w=900&auto=format&fit=crop&q=60" alt="Smart Waste Bin" />
+          <img src="https://plus.unsplash.com/premium_photo-1681487702577-9c13a36d5b98?w=900&auto=format&fit=crop&q=60" alt="Kazakhstan Nature" />
+        </div>
+
+        <p className={styles.bottomText}>
+          With Ecosort, we are not only managing waste — we are building a movement. A movement for a sustainable Kazakhstan, where innovation meets environmental care. Join us on this journey toward a cleaner tomorrow.
+        </p>
+      </div>
+
+      {/* 🌍 Новый Раздел: Экологическое Влияние */}
+      <div className={styles.impactSection}>
+        <h2>Environmental Impact of Improper Waste Disposal</h2>
+        <p>
+          Improper waste management leads to serious ecological consequences. Landfills emit methane, a potent greenhouse gas. Plastics enter rivers and oceans, threatening wildlife. Toxic materials seep into the soil and groundwater. Ecosort’s goal is not just recycling — it’s preventing these outcomes altogether by encouraging proper sorting and waste reduction practices at every level of society.
+        </p>
+        <div className={styles.chartContainer}>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={wasteData}
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                label
+                dataKey="value"
+              >
+                {wasteData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <p>
+          By understanding what types of waste we generate most, we can develop smarter strategies for recycling and waste reduction. Ecosort uses this data to optimize bin placement and user engagement, turning statistics into real-world environmental action.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default Home;
+
+not-found.css
+
+.not-found-container1 {
+    width: 100%;
+    display: flex;
+    overflow: auto;
+    min-height: 100vh;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .not-found-container2 {
+    display: flex;
+    position: relative;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .not-found-text2 {
+    color: rgb(38, 38, 38);
+    font-size: 252px;
+    margin-top: -20px;
+    font-weight: 900;
+    margin-bottom: -20px;
+    letter-spacing: -20px;
+  }
+  
+  .not-found-container3 {
+    width: 421px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .not-found-text3 {
+    text-align: center;
+    font-weight: 400;
+  }
+  
+
+NotFound.js
+
+import React from 'react';
+import { Helmet } from 'react-helmet';
+import './not-found.css';
+
+// Компонент для страницы "404 Not Found"
+const NotFound = (props) => {
+  return (
+    <div className="not-found-container1">
+      <Helmet>
+        <title>404 - Not Found</title>
+      </Helmet>
+      <h3>OOPS! PAGE NOT FOUND</h3>
+      <div className="not-found-container2">
+        <h1 className="not-found-text2">404</h1>
+      </div>
+      <div className="not-found-container3">
+        <h2 className="not-found-text3">
+          WE ARE SORRY, BUT THE PAGE YOU REQUESTED WAS NOT FOUND
+        </h2>
+      </div>
+    </div>
+  );
+};
+
+export default NotFound;
+
+
+App.js
+
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import Map from './components/Map';
+import './index.css';
+
+function App() {
+  return (
+    <Router>
+      <Navbar />
+      <div style={{ paddingTop: "60px" }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/map" element={<Map />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+index.css
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Arial', sans-serif;
+}
+
+body {
+  background-color: #f5f5f5;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.leaflet-container {
+  height: 80vh;
+  width: 100%;
+}
+
+index.js
+
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
+
+// Рендер основного компонента приложения в элемент с id="root"
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+
+
+.babelrc
+
+{
+  "plugins": ["@babel/plugin-transform-optional-chaining"]
+}
+
+
+
+
+server/ 
+src/
+middleware/
+authenticateToken.js
+
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
+
+// Middleware для аутентификации по JWT
+function authenticateToken(req, res, next) {
+  // Получение токена из заголовка Authorization
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) {
+    // Если токен отсутствует, возвращаем ошибку 401
+    return res.status(401).json({ message: "No token provided, access denied" });
+  }
+
+  // Верификация токена
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err)
+      return res.status(403).json({ message: "Invalid token" });
+    req.user = user; // Сохраняем данные пользователя в объекте запроса
+    next();
+  });
+}
+
+module.exports = authenticateToken;
+
+
+models/
+Container.js
+
+const mongoose = require('mongoose');
+
+const containerSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'maintenance'],
+    default: 'active'
+  },
+  latitude: {
+    type: Number,
+    required: true,
+    min: -90,
+    max: 90
+  },
+  longitude: {
+    type: Number,
+    required: true,
+    min: -180,
+    max: 180
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Container', containerSchema);
+
+User.js
+
+const mongoose = require('mongoose');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
+
+const UserSchema = new mongoose.Schema({
+  userId: { type: Number, unique: true },
+  firstName: { 
+    type: String,
+    required: [true, 'Имя обязательно'],
+    trim: true
+  },
+  lastName: {
+    type: String,
+    required: [true, 'Фамилия обязательна'],
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+      message: 'Некорректный email'
+    }
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6
+  },
+  rating: { type: Number, default: 4.2 },
+  bonuses: { type: Number, default: 0 },
+  containersFound: { type: Number, default: 0 },
+  status: { type: String, default: 'active' }
+});
+
+UserSchema.plugin(AutoIncrement, {inc_field: 'userId', start_seq: 0});
+
+module.exports = mongoose.model('User', UserSchema);
+
+routes/
+containers.js
+
+const express = require('express');
+const router = express.Router();
+const Container = require('../models/Container');
+
+// Get all containers
+router.get('/', async (req, res) => {
+  try {
+    const containers = await Container.find().sort({ createdAt: -1 });
+    res.json(containers);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get single container
+router.get('/:id', async (req, res) => {
+  try {
+    const container = await Container.findById(req.params.id);
+    if (!container) return res.status(404).json({ error: 'Container not found' });
+    res.json(container);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create container
+router.post('/', async (req, res) => {
+  try {
+    const { name, status, latitude, longitude } = req.body;
+    
+    const newContainer = new Container({
+      name,
+      status: status || 'active',
+      latitude: Number(latitude),
+      longitude: Number(longitude)
+    });
+
+    const savedContainer = await newContainer.save();
+    res.status(201).json(savedContainer);
+  } catch (err) {
+    res.status(400).json({ error: 'Invalid data' });
+  }
+});
+
+// Update container
+router.put('/:id', async (req, res) => {
+  try {
+    const container = await Container.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    
+    if (!container) return res.status(404).json({ error: 'Container not found' });
+    res.json(container);
+  } catch (err) {
+    res.status(400).json({ error: 'Update failed' });
+  }
+});
+
+// Delete container
+router.delete('/:id', async (req, res) => {
+  try {
+    const container = await Container.findByIdAndDelete(req.params.id);
+    if (!container) return res.status(404).json({ error: 'Container not found' });
+    res.json({ message: 'Container deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+module.exports = router;
+
+users.js
+
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+
+router.post('/register', async (req, res) => {
+  try {
+    const { firstName, lastName, email, password } = req.body;
+
+    // Валидация
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ error: 'Все поля обязательны' });
+    }
+
+    // Создание пользователя
+    const user = new User({ firstName, lastName, email, password });
+    await user.save();
+
+    res.status(201).json({
+      userId: user.userId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      rating: user.rating,
+      status: user.status
+    });
+
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: 'Email уже зарегистрирован' });
+    }
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+router.get('/stats/:userId', async (req, res) => {
+  try {
+    const user = await User.findOne({ userId: req.params.userId })
+      .select('-password -_id -__v');
+
+    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+    
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+authRoutes.js
+
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+// Регистрация
+router.post('/register', async (req, res) => {
+  try {
+    const { firstName, lastName, email, password } = req.body;
+
+    // Валидация
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // Проверка существующего email
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ 
+        error: 'Этот email уже зарегистрирован',
+        solution: 'Используйте другой email или восстановите пароль'
+      });
+    }
+
+    // Хеширование пароля
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Создание пользователя
+    const newUser = new User({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword
+    });
+
+    await newUser.save();
+
+    // Генерация JWT токена
+    const token = jwt.sign(
+      { userId: newUser._id, email: newUser.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.status(201).json({
+      token,
+      user: {
+        id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Ошибка регистрации:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+// Вход
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Поиск пользователя по email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Проверка пароля
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Генерация JWT токена
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+module.exports = router;
+ 
+utils/
+errorHandler.js
+
+function errorHandler(err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message
+  });
+}
+
+module.exports = errorHandler;
+
+index.js
+
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const containerRoutes = require('./routes/containers');
+const authRoutes = require('./routes/authRoutes');
+const errorHandler = require('./utils/errorHandler');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors({
+  origin: 'http://localhost:3000', 
+  methods: ['POST', 'PUT', 'GET', 'DELETE', 'OPTIONS', 'HEAD'],
+  credentials: true
+}));
+app.use(express.json());
+
+// Database connection
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ecosort', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Routes
+app.use('/api/containers', containerRoutes);
+app.use('/api/auth', authRoutes);
+
+// Обработчик ошибок должен быть подключён в конце, после всех маршрутов
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+
+
+.env
+
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/ecosort
+JWT_SECRET=your_secret_key
